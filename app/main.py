@@ -12,21 +12,28 @@
 # to do:
 # enable communication between servers
 
-# http://localhost:8007/work/tables
+# http://localhost:9000/authors/docs
+# http://localhost:9000/edition/docs
+# http://localhost:9000/authors/authors/authors/rows
+# http://localhost:9000/authors/authors/authors/rows?firstName=John
+# http://localhost:9000/authors/authors/authors/rows?firstName=John&lastName=Voelker
 
+from fastapi.responses import RedirectResponse
+import uvicorn
 import importlib
-import multiprocessing
+from fastapi import FastAPI
 
-default_db_path = "app/data/DB/"
+PORT = 9000
+DEFAULT_DB_PATH = "app/data/DB/"
 
-servers = [
+SERVERS = [
     {
         "port": 8001,
         "api": "api.authors",
         "databases": [
             {
                 "name": "authors",
-                "db_path": default_db_path + "authors.db"
+                "db_path": DEFAULT_DB_PATH + "authors.db"
             }
         ]
     },
@@ -36,7 +43,7 @@ servers = [
         "databases": [
             {
                 "name": "authorship",
-                "db_path": default_db_path + "authorship.db"
+                "db_path": DEFAULT_DB_PATH + "authorship.db"
             }
         ]
     },
@@ -46,7 +53,7 @@ servers = [
         "databases": [
             {
                 "name": "edition",
-                "db_path": default_db_path + "edition.db"
+                "db_path": DEFAULT_DB_PATH + "edition.db"
             }
         ]
     },
@@ -56,7 +63,7 @@ servers = [
         "databases": [
             {
                 "name": "edition_languages",
-                "db_path": default_db_path + "edition_languages.db"
+                "db_path": DEFAULT_DB_PATH + "edition_languages.db"
             }
         ]
     },
@@ -66,7 +73,7 @@ servers = [
         "databases": [
             {
                 "name": "languages",
-                "db_path": default_db_path + "languages.db"
+                "db_path": DEFAULT_DB_PATH + "languages.db"
             }
         ]
     },
@@ -76,7 +83,7 @@ servers = [
         "databases": [
             {
                 "name": "publisher",
-                "db_path": default_db_path + "publisher.db"
+                "db_path": DEFAULT_DB_PATH + "publisher.db"
             }
         ]
     },
@@ -86,11 +93,11 @@ servers = [
         "databases": [
             {
                 "name": "work",
-                "db_path": default_db_path + "work.db"
+                "db_path": DEFAULT_DB_PATH + "work.db"
             },
             {
                 "name": "collection",
-                "db_path": default_db_path + "collection.db"
+                "db_path": DEFAULT_DB_PATH + "collection.db"
             }
         ]
     },
@@ -100,72 +107,24 @@ servers = [
         "databases": [
             {
                 "name": "work_languages",
-                "db_path": default_db_path + "work_languages.db"
+                "db_path": DEFAULT_DB_PATH + "work_languages.db"
             }
         ]
     }
 ]
 
-    # @app.get("/health")
-    # def health():
-    #     return {
-    #         "status": "ok",
-    #         "port": server_cfg["port"],
-    #         "databases": list(connections.keys())
-    #     }
+app = FastAPI(title="Book Gateway API")
 
-    # @app.get("/{db_name}/tables")
-    # def list_tables(db_name: str):
-    #     if db_name not in connections:
-    #         raise HTTPException(404, "Unknown database")
-
-    #     cur = connections[db_name].cursor()
-    #     cur.execute("""
-    #         SELECT name FROM sqlite_master
-    #         WHERE type='table' AND name NOT LIKE 'sqlite_%'
-    #     """)
-    #     return [row["name"] for row in cur.fetchall()]
-
-    # @app.get("/{db_name}/query")
-    # def query(db_name: str, sql: str):
-    #     """
-    #     Example:
-    #     /edition/query?sql=SELECT * FROM edition_format
-    #     """
-    #     if db_name not in connections:
-    #         raise HTTPException(404, "Unknown database")
-
-    #     try:
-    #         cur = connections[db_name].cursor()
-    #         cur.execute(sql)
-    #         rows = cur.fetchall()
-    #         return [dict(row) for row in rows]
-    #     except sqlite3.Error as e:
-    #         raise HTTPException(400, str(e))
-
-    # uvicorn.run(app, host="127.0.0.1", port=server_cfg["port"], log_level="info")
-
-def start_server(server_cfg: dict):
-    module = importlib.import_module(server_cfg["api"])
-    module.run()
-
-def main():
-    processes = []
-    for server in servers:
-        p = multiprocessing.Process(
-            target=start_server,
-            args=(server,),
-            name=f"server_{server['port']}"
-        )
-        p.start()
-        processes.append(p)
-    try:
-        for p in processes:
-            p.join()
-    except KeyboardInterrupt:
-        for p in processes:
-            p.terminate()
+@app.get("/servers", include_in_schema=True)
+def root():
+    tables = [server["api"].split(".")[-1] for server in SERVERS]
+    return {"tables": tables}
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    main()
+    for server in SERVERS:
+        module = importlib.import_module(server["api"])
+        mount_path = "/" + server["api"].split(".")[-1]
+        if hasattr(module, "app"):
+            app.mount(mount_path, module.app)
+
+    uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="info")

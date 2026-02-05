@@ -17,35 +17,32 @@ class Author():
     dod: Date | None
     pseudonyms: list[str]
 
-
-
-
 import os
+import main
 import sqlite3
-import uvicorn
-from fastapi import FastAPI, HTTPException
+import api.base_api
+from pathlib import Path
+from fastapi import FastAPI, APIRouter, HTTPException, Request
 
-DB_PATH = "app/data/DB/authors.db"
-PORT = 8001
+CURRENT_FILE = Path(__file__)
+TARGET_API = CURRENT_FILE.stem
+DEFAULT_DB_PATH = "app/data/DB/"
 
+DB_NAMES = [TARGET_API]
+db_paths = [db["db_path"] for server in main.SERVERS for db in server["databases"] if server["api"] == "api." + TARGET_API]
 
-def run():
-    if not os.path.exists(DB_PATH):
-        raise RuntimeError(f"Database not found: {DB_PATH}")
+for path in db_paths:
+    if not os.path.exists(path):
+        raise RuntimeError(f"Database not found: {path}")
 
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+connections = {
+    os.path.basename(path).split(".")[0]: sqlite3.connect(path, check_same_thread=False)
+    for path in db_paths
+}
+
+for conn in connections.values():
     conn.row_factory = sqlite3.Row
 
-    app = FastAPI(title="Authors DB")
-
-    @app.get("/{db_name}/tables")
-    def list_tables(db_name: str):
-        if db_name != "authors":
-            raise HTTPException(status_code=404, detail="Database not found")
-
-        cursor = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table';")
-        tables = [row["name"] for row in cursor.fetchall()]
-        return {"tables": tables}
-
-    uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="info")
+router = APIRouter(prefix="", tags=[TARGET_API])
+app = FastAPI(title=f"{TARGET_API} DB API")
+api.base_api.main(app, connections)
