@@ -1,0 +1,2 @@
+# run the db_creator script
+# install dependencies
