@@ -3,16 +3,6 @@
 # Na primjer, jedan server ima sve podatke o piscu, dok drugi server ima podatke o izdavačima. Moguće je da server o piscu zatraži od drugog 
 # servera da vrati popis svih knjiga koje je napisao određeni pisac, a koje je izdao određeni izdavač.
 
-# Ideas:
-    # get a list of authors published under a specific publisher
-
-
-
-
-# to do:
-# enable communication between servers
-
-
 # http://127.0.0.1:8000/docs
 # http://127.0.0.1:8001/docs
 
@@ -122,8 +112,6 @@ def main() -> None:
         p.start()
         processes.append(p)
 
-    uvicorn.run(app, host="127.0.0.1", port=PORT)
-
 def start_server(api_module_name, port):
     module = importlib.import_module(api_module_name)
     uvicorn.run(module.app, host="127.0.0.1", port=port, log_level="info")
@@ -136,4 +124,7 @@ def root():
     return {"tables": tables}
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()
+    uvicorn.run(app, host="127.0.0.1", port=PORT)
+

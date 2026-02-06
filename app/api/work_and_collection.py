@@ -1,5 +1,7 @@
 import os
+
 import main
+import httpx
 import sqlite3
 import api.base_api
 from pathlib import Path
@@ -27,3 +29,5 @@ for conn in connections.values():
 router = APIRouter(prefix="", tags=[TARGET_API])
 app = FastAPI(title=f"{TARGET_API} DB API")
 api.base_api.main(app, connections)
+
+app.include_router(router)

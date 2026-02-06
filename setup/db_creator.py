@@ -1,5 +1,8 @@
 import os
+import sys
 import sqlite3
+import subprocess
+from pathlib import Path
 
 default_db_path = "app/data/DB/"
 
@@ -29,9 +32,9 @@ dbs = [
                 ('Agatha', NULL, 'Christie', '1890-09-15', '1977-01-12'),
                 ('Timothy', NULL, 'Zahn', '1951-09-01', NULL),
                 ('Michael', 'A.', 'Stackpole', '1957-11-27', NULL),
+                ('Aaron ', NULL, 'Allston', '1960-12-08', '2014-02-27'),
                 ('John', 'D.', 'Voelker', '1903-06-29', '1991-03-18'),
-                ('Patrick ', NULL, 'Hamilton', '1904-03-17', '1962-09-23'),
-                ('Aaron ', NULL, 'Allston', '1960-12-08', '2014-02-27');
+                ('Patrick ', NULL, 'Hamilton', '1904-03-17', '1962-09-23');
             INSERT INTO pseudonyms (author_id, pseudonym) VALUES
                 (3, 'Mary Westmacott'),
                 (6, 'Robert Traver');
@@ -242,9 +245,9 @@ dbs = [
                 ("The Hobbit", '1937-09-21', 1),
                 ("The Fellowship of the Ring ", '1954-07-29', 1),
                 ("The Two Towers", '1954-11-11', 1),
+                ("The Return of the King ", '1955-03-20', 1),
                 ("The Silmarillion", NULL, 1),
-                ("The Children of Húrin", NULL, 1),
-                ("The Return of the King ", '1955-03-20', 1);
+                ("The Children of Húrin", NULL, 1);
             INSERT INTO genre (genre) VALUES
                 ('Fiction'),
                 ('Non-Fiction'),
@@ -256,14 +259,50 @@ dbs = [
                 ('History'),
                 ('Horror'), 
                 ('Crime'), 
-                ('Thriller');
+                ('Thriller'),
+                ('Adventure'),
+                ('Drama'),
+                ('Epic');
             INSERT INTO work_genre (idWork, idGenre) VALUES
+                (1, 4),
                 (1, 6),
+                (1, 9),
+                (1, 10),
+                (2, 5),
+                (2, 6),
+                (3, 7),
+                (2, 9),
+                (3, 6),
+                (4, 5),
+                (4, 7),
+                (5, 3),
+                (5, 8),
+                (6, 3),
+                (6, 8),
+                (7, 3),
+                (7, 8),
+                (8, 3),
+                (8, 8),
+                (9, 3),
+                (9, 8),
+                (10, 3),
+                (10, 8),
+                (11, 4),
                 (11, 6),
+                (11, 8),
+                (12, 4),
                 (12, 6),
+                (12, 10),
+                (13, 4),
                 (13, 6),
+                (13, 10),
+                (14, 4),
                 (14, 6),
+                (14, 10),
+                (15, 4),
                 (15, 6),
+                (15, 9),
+                (16, 4),
                 (16, 6);
             """
     },
@@ -306,7 +345,7 @@ dbs = [
     }
 ]
 
-def create_dbs(insert_defaults=True):
+def create_dbs(insert_defaults=True) -> None:
     for db in dbs:
         db_dir = os.path.dirname(db["path"])
         if db_dir:
@@ -335,4 +374,18 @@ def create_dbs(insert_defaults=True):
 
     conn.close()
 
-create_dbs()
+def install_dependencies() -> None:
+    req_file = Path(__file__).parent / "requirements.txt"
+    if req_file.exists():
+        print(f"Installing dependencies from {req_file}...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", str(req_file)])
+        print("Dependencies installed successfully!")
+    else:
+        print("No requirements.txt found, skipping dependency installation.")
+
+is_installing_dependencies: bool = True
+
+if __name__ == "__main__":
+    if is_installing_dependencies == False:
+        install_dependencies()
+    create_dbs()
