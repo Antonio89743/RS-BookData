@@ -1,6 +1,4 @@
-import os
-import sqlite3
-from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi import HTTPException, Request
 
 def main(app, connections):
     @app.get("/dbs")
@@ -31,26 +29,50 @@ def main(app, connections):
         if not columns_info:
             raise HTTPException(status_code=404, detail="Table not found")
 
-        columns = [col[1] for col in columns_info]
+        all_columns = [col["name"] if isinstance(col, dict) else col[1] for col in columns_info]
 
-        filters = dict(request.query_params)
+        conn.row_factory = lambda cursor, row: dict(zip([c[0] for c in cursor.description], row))
+        cursor = conn.cursor()
+
+        query_params = dict(request.query_params)
+        fields = query_params.pop("fields", None)
+
+        if fields:
+            selected_columns = [col.strip() for col in fields.split(",")]
+            invalid_cols = [col for col in selected_columns if col not in all_columns]
+            if invalid_cols:
+                raise HTTPException(status_code=400, detail=f"Invalid column(s) requested: {invalid_cols}")
+        else:
+            selected_columns = all_columns
+
         where_clauses = []
         params = []
 
-        for k, v in filters.items():
-            if k not in columns:
+        for k, v in query_params.items():
+            if k not in all_columns:
                 raise HTTPException(status_code=400, detail=f"Invalid column: {k}")
 
-            if v.lower() == "null":
-                where_clauses.append(f"{k} IS NULL")
-            else:
-                where_clauses.append(f"{k} = ?")
-                params.append(v)
+            values = []
+            for part in v.split(","):
+                if part.strip():
+                    values.append(part.strip())
 
-        query = f"SELECT * FROM {table_name}"
+            if not values:
+                continue
+
+            if all(x.isdigit() for x in values):
+                placeholders = ", ".join("?" for _ in values)
+                where_clauses.append(f"{k} IN ({placeholders})")
+                params.extend([int(x) for x in values])
+            else:
+                like_clauses = [f"{k} LIKE ?" for _ in values]
+                where_clauses.append("(" + " OR ".join(like_clauses) + ")")
+                params.extend([f"%{x}%" for x in values])
+
+        query = f"SELECT {', '.join(selected_columns)} FROM {table_name}"
         if where_clauses:
             query += " WHERE " + " AND ".join(where_clauses)
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        return rows

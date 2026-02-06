@@ -12,18 +12,16 @@
 # to do:
 # enable communication between servers
 
-# http://localhost:9000/authors/docs
-# http://localhost:9000/edition/docs
-# http://localhost:9000/authors/authors/authors/rows
-# http://localhost:9000/authors/authors/authors/rows?firstName=John
-# http://localhost:9000/authors/authors/authors/rows?firstName=John&lastName=Voelker
 
-from fastapi.responses import RedirectResponse
+# http://127.0.0.1:8000/docs
+# http://127.0.0.1:8001/docs
+
 import uvicorn
 import importlib
+import multiprocessing
 from fastapi import FastAPI
 
-PORT = 9000
+PORT = 8000
 DEFAULT_DB_PATH = "app/data/DB/"
 
 SERVERS = [
@@ -113,7 +111,24 @@ SERVERS = [
     }
 ]
 
-app = FastAPI(title="Book Gateway API")
+def main() -> None:
+    processes = []
+
+    for server in SERVERS:
+        p = multiprocessing.Process(
+            target=start_server,
+            args=(server["api"], server["port"]),
+        )
+        p.start()
+        processes.append(p)
+
+    uvicorn.run(app, host="127.0.0.1", port=PORT)
+
+def start_server(api_module_name, port):
+    module = importlib.import_module(api_module_name)
+    uvicorn.run(module.app, host="127.0.0.1", port=port, log_level="info")
+
+app = FastAPI(title="BookDataAPI")
 
 @app.get("/servers", include_in_schema=True)
 def root():
@@ -121,10 +136,4 @@ def root():
     return {"tables": tables}
 
 if __name__ == "__main__":
-    for server in SERVERS:
-        module = importlib.import_module(server["api"])
-        mount_path = "/" + server["api"].split(".")[-1]
-        if hasattr(module, "app"):
-            app.mount(mount_path, module.app)
-
-    uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="info")
+    main()
