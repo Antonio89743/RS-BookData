@@ -311,7 +311,7 @@ dbs = [
         "execute_message_create": """
             CREATE TABLE IF NOT EXISTS edition (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                workId INTEGER,
+                idWork INTEGER,
                 publicationDate DATE,
                 publisherId INTEGER,
                 ISBN TEXT,
@@ -325,17 +325,46 @@ dbs = [
                 )
             """,
         "execute_message_insert_defaults": """
-            INSERT INTO edition (workId, publicationDate, publisherId, ISBN, formatId, idLanguage) VALUES
-                (1, '1996-08-06', 1, '978-0553103540', 2, 1),
+
+            INSERT INTO edition (idWork, publicationDate, publisherId, ISBN, formatId, idLanguage) VALUES
+                -- A Game of Thrones (George R. R. Martin)
+                (1, '1996-08-06', 1, '978-0553103540', 1, 1),
+                (1, '1997-03-01', 1, '978-0553573404', 2, 1),
+                (1, '2011-03-22', 2, '978-0007428540', 3, 1),
+                -- Anatomy of a Murder (John D. Voelker)
+                (2, '1958-01-01', 5, '978-0679738726', 1, 1),
+                (2, '1984-06-01', 3, '978-0140183070', 2, 1),
+                -- Rope (Patrick Hamilton)
+                (3, '1929-01-01', 6, '978-0330241188', 1, 1),
+                (3, '2001-05-01', 2, '978-0413771199', 2, 1),
+                -- Witness for the Prosecution (Agatha Christie)
+                (4, '1933-01-01', 4, '978-0312981668', 1, 1),
+                (4, '2016-09-06', 2, '978-0062693662', 3, 1),
+                -- Heir to the Empire (Timothy Zahn)
+                (5, '1991-05-01', 1, '978-0553296129', 1, 1),
+                (5, '1992-06-01', 1, '978-0553568004', 2, 1),
+                (5, '2011-09-06', 1, '978-0307796068', 3, 1),
+                -- Dark Force Rising
+                (6, '1992-06-01', 1, '978-0553296136', 1, 1),
+                (6, '2011-09-06', 1, '978-0307796075', 3, 1),
+                -- The Last Command
+                (7, '1993-01-01', 1, '978-0553296143', 1, 1),
+                (7, '2011-09-06', 1, '978-0307796082', 3, 1),
+                -- X-Wing series (Stackpole)
                 (8, '1996-01-01', 3, '978-0553568011', 1, 1),
+                (8, '1997-02-01', 3, '978-0553568042', 2, 1),
                 (9, '1997-01-01', 3, '978-0553568027', 1, 1),
                 (10, '1998-01-01', 3, '978-0553568035', 1, 1),
+                -- Tolkien works
                 (11, '1937-09-21', 3, '978-0547928227', 1, 1),
+                (11, '2012-09-18', 3, '978-0547928234', 3, 1),
                 (12, '1954-07-29', 3, '978-0547928210', 1, 1),
+                (12, '2012-09-18', 3, '978-0547928241', 3, 1),
                 (13, '1954-11-11', 3, '978-0547928203', 1, 1),
-                (14, NULL, 3, '978-0547928197', 1, 1),
-                (15, NULL, 3, '978-0547928180', 1, 1),
-                (16, '1955-03-20', 3, '978-0547928173', 1, 1);
+                (14, '1955-03-20', 3, '978-0547928197', 1, 1),
+                -- Posthumous Tolkien
+                (15, '1977-09-15', 3, '978-0547928180', 1, 1),
+                (16, '2007-04-17', 3, '978-0547928173', 1, 1);
             INSERT INTO edition_format (format) VALUES
                 ('Hardcover'),
                 ('Paperback'),
