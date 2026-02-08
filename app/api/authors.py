@@ -1,21 +1,3 @@
-from sqlite3 import Date
-
-class Author():
-    def __init__(self, firstName, middleName, lastName, dob, dod=None, pseudonyms=None):
-        self.firstNaame = firstName
-        self.middleName = middleName
-        self.lastName = lastName
-        self.dob = dob
-        self.dod = dod
-        self.pseudonyms = pseudonyms if pseudonyms is not None else []
-
-    firstNaame: str
-    middleName: str
-    lastName: str
-    dob: Date
-    dod: Date | None
-    pseudonyms: list[str]
-
 import os
 import main
 import httpx
@@ -183,6 +165,38 @@ async def get_authors_by_publisher(author_id: int, collection_id: int):
 
         return {"work_collection_json": work_collection_json}
 
+@router.get("/authors/{author_id}/publishers/{publisher_id}/works")
+async def get_authors_by_publisher(author_id: int, publisher_id: int):
+    async with httpx.AsyncClient() as client:
+
+        if author_id is None or publisher_id is None:
+            raise HTTPException(status_code=404, detail=f"Author '{author_id}' not found")
+    
+        authorship_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.authorship")
+        resp = await client.get(f"http://127.0.0.1:{authorship_port}/authorship/authorship/rows?fields=idWork&idAuthor={author_id}")
+        resp.raise_for_status()
+        authorship_json = resp.json()
+
+        authorship_json = [row["idWork"] for row in authorship_json]
+        if not authorship_json:
+            return {"edititons_json": []}
+
+        edition_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.edition")
+        resp = await client.get(f"http://127.0.0.1:{edition_port}/edition/edition/rows?publisherId={publisher_id}&idWork={','.join(map(str, authorship_json))}")
+        resp.raise_for_status()
+        editions_json = resp.json()
+
+        authorship_json = [row["idWork"] for row in editions_json]
+        if not authorship_json:
+            return {"edititons_json": []}
+
+        work_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.work_and_collection")
+        resp = await client.get(f"http://127.0.0.1:{work_port}/work/work/rows?id={','.join(map(str, authorship_json))}")
+        resp.raise_for_status()
+        works_json = resp.json()
+
+        return {"edititons_json": works_json}
+
 @router.get("/authors/{author_id}/publishers/{publisher_id}/editions")
 async def get_authors_by_publisher(author_id: int, publisher_id: int):
     async with httpx.AsyncClient() as client:
@@ -229,51 +243,7 @@ async def get_authors_by_publisher(author_id: int, publisher_id: int):
             if work_id in editions_by_work:
                 work["editions"] = editions_by_work[work_id]
                 works_with_editions.append(work)
-                
+
         return {"edititons_json": works_json}
-
-
-
-
-
-# get all works by author
-# get all ediitons of that work (but only where publisher is as specified)
-
-        # "execute_message_create": """
-        #     CREATE TABLE IF NOT EXISTS work (
-        #         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #         title TEXT,
-        #         dateCompleted DATE,
-        #         idOriginalLanguage INTEGER
-        #         );
-
-
-
-        # "path": default_db_path + "edition.db",
-        # "execute_message_create": """
-        #     CREATE TABLE IF NOT EXISTS edition (
-        #         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #         idWork INTEGER,
-        #         publicationDate DATE,
-        #         publisherId INTEGER,
-        #         ISBN TEXT,
-        #         formatId INTEGER,
-        #         idLanguage INTEGER,
-        #         FOREIGN KEY (formatId) REFERENCES edition_format(id)
-        #         );
-        #     CREATE TABLE IF NOT EXISTS edition_format (
-        #         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #         format TEXT
-        #         )
-        #     """,
-
-
-
-
-
-
-
-
-
 
 app.include_router(router)

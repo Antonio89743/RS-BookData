@@ -1,5 +1,4 @@
 import os
-
 import main
 import httpx
 import sqlite3
@@ -63,12 +62,25 @@ async def get_authors_collections(work_id: int):
         resp.raise_for_status()
         work_edition_json = resp.json()
         edition_ids = list({row["idLanguage"] for row in work_edition_json})
-        
-        work_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.languages")
-        resp = await client.get(f"http://127.0.0.1:{work_port}/languages/languages/rows?fields=language&id={','.join(map(str, edition_ids))}")
-        resp.raise_for_status()
-        languages_json = resp.json()
 
-        return {"languages": languages_json}
+        edition_languages_data = []
+
+        for edition in edition_ids:
+
+            edition_languages_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.edition_languages")
+            resp = await client.get(f"http://127.0.0.1:{edition_languages_port}/edition_languages/edition_languages/rows?fields=idLanguage&idEdition={edition}")
+            resp.raise_for_status()
+            edition_languages_json = resp.json()
+            edition_languages_ids = list({row["idLanguage"] for row in edition_languages_json})
+
+            languages_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.languages")
+            resp = await client.get(f"http://127.0.0.1:{languages_port}/languages/languages/rows?fields=language&id={','.join(map(str, edition_languages_ids))}")
+            resp.raise_for_status()
+            languages_json = resp.json()
+        
+            languages = list({row["language"] for row in languages_json})
+            edition_languages_data.append(languages)
+
+        return {"edition_languages": edition_languages_data}
 
 app.include_router(router)
