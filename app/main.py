@@ -5,6 +5,8 @@
 # http://127.0.0.1:8007/work/8/collections
 # http://127.0.0.1:8007/work/8/languagesPublished
 # http://127.0.0.1:8007/work/work/rows?fields=title,id
+# http://127.0.0.1:8007/work/work/rows?dateCompleted=199_
+# http://127.0.0.1:8007/work/work/rows?fields=id,title&dateCompleted=199_
 # http://127.0.0.1:8001/authors/4/publishers/1/editions
 # http://127.0.0.1:8001/authors/4/publishers/1/works
 # http://127.0.0.1:8003/edition/30/cover

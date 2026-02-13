@@ -4,7 +4,7 @@ import httpx
 import sqlite3
 import api.base_api
 from pathlib import Path
-from fastapi import FastAPI, APIRouter, Response
+from fastapi import FastAPI, APIRouter, Response, HTTPException
 
 CURRENT_FILE = Path(__file__)
 TARGET_API = CURRENT_FILE.stem
@@ -32,6 +32,9 @@ api.base_api.main(app, connections)
 @router.get("/edition/{edition_id}/cover")
 async def get_edition_cover(edition_id: int):
     async with httpx.AsyncClient(follow_redirects=True) as client:
+
+        if edition_id is None:
+            raise HTTPException(status_code=404, detail=f"Edition '{edition_id}' not found")
 
         work_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.edition")
         resp = await client.get(f"http://127.0.0.1:{work_port}/edition/edition/rows?fields=ISBN&id={edition_id}")

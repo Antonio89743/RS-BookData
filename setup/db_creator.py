@@ -360,19 +360,14 @@ dbs = [
                 -- The Hobbit
                 (11, '1937-09-21', 3, '9780618260300', 1, 1),
                 (11, '1999-09-01', 3, '9780261102217', 2, 1),
-
                 -- The Fellowship of the Ring
                 (12, '1954-07-29', 3, '9780261102354', 2, 1),
-
                 -- The Two Towers
                 (13, '1954-11-11', 3, '9780261102361', 2, 1),
-
                 -- The Return of the King
                 (14, '1955-03-20', 3, '9780261102378', 2, 1),
-
                 -- The Silmarillion
                 (15, '1977-09-15', 3, '9780261102422', 2, 1),
-
                 -- The Children of Húrin
                 (16, '2007-04-17', 3, '9780618894642', 1, 1),
                 (16, '2008-04-01', 3, '9780547086057', 2, 1);
@@ -423,9 +418,9 @@ def install_dependencies() -> None:
     else:
         print("No requirements.txt found, skipping dependency installation.")
 
-is_installing_dependencies: bool = True
+IS_INSTALLING_DEPENDENCIES: bool = True
 
 if __name__ == "__main__":
-    if is_installing_dependencies == False:
+    if IS_INSTALLING_DEPENDENCIES:
         install_dependencies()
     create_dbs()

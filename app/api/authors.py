@@ -169,8 +169,10 @@ async def get_authors_by_publisher(author_id: int, collection_id: int):
 async def get_authors_by_publisher(author_id: int, publisher_id: int):
     async with httpx.AsyncClient() as client:
 
-        if author_id is None or publisher_id is None:
+        if author_id is None:
             raise HTTPException(status_code=404, detail=f"Author '{author_id}' not found")
+        elif publisher_id is None is None:
+            raise HTTPException(status_code=404, detail=f"Publisher '{publisher_id}' not found")
     
         authorship_port = next(server["port"] for server in main.SERVERS if server["api"] == "api.authorship")
         resp = await client.get(f"http://127.0.0.1:{authorship_port}/authorship/authorship/rows?fields=idWork&idAuthor={author_id}")
